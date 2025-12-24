@@ -1,0 +1,533 @@
+/*
+ * Unitree Go2 Controller - Cyberpunk Theme
+ * 
+ * サイバーパンク風のダークテーマスタイルシート
+ * ネオンカラーとグロー効果を特徴とする
+ */
+
+/* ================================
+   カラーパレット（CSS変数として参照）
+   --bg-dark: #0a0a0f
+   --bg-panel: #12121a
+   --bg-card: #1a1a2e
+   --accent-cyan: #00ffff
+   --accent-magenta: #ff00ff
+   --accent-yellow: #ffff00
+   --accent-green: #00ff88
+   --accent-red: #ff3366
+   --text-primary: #e0e0ff
+   --text-secondary: #8080a0
+   --border-glow: #00ffff
+   ================================ */
+
+/* ================== 基本スタイル ================== */
+
+QMainWindow {
+    background-color: #0a0a0f;
+}
+
+QWidget {
+    background-color: transparent;
+    color: #e0e0ff;
+    font-family: "SF Mono", "Monaco", "Menlo", "Courier New", monospace;
+    font-size: 13px;
+}
+
+QWidget#centralWidget {
+    background-color: #0a0a0f;
+}
+
+/* ================== パネル・フレーム ================== */
+
+QFrame {
+    background-color: #12121a;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+}
+
+QFrame#glowFrame {
+    border: 1px solid #00ffff;
+    border-radius: 8px;
+}
+
+QGroupBox {
+    background-color: #12121a;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    margin-top: 16px;
+    padding: 16px;
+    padding-top: 24px;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 12px;
+    padding: 0 8px;
+    color: #00ffff;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* ================== ラベル ================== */
+
+QLabel {
+    color: #e0e0ff;
+    background-color: transparent;
+    border: none;
+}
+
+QLabel#titleLabel {
+    color: #00ffff;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 4px;
+}
+
+QLabel#subtitleLabel {
+    color: #8080a0;
+    font-size: 11px;
+    letter-spacing: 2px;
+}
+
+QLabel#valueLabel {
+    color: #00ff88;
+    font-size: 28px;
+    font-weight: bold;
+    font-family: "SF Mono", "Monaco", monospace;
+}
+
+QLabel#unitLabel {
+    color: #8080a0;
+    font-size: 11px;
+}
+
+QLabel#warningLabel {
+    color: #ffff00;
+}
+
+QLabel#errorLabel {
+    color: #ff3366;
+}
+
+QLabel#statusConnected {
+    color: #00ff88;
+}
+
+QLabel#statusDisconnected {
+    color: #ff3366;
+}
+
+/* ================== ボタン ================== */
+
+QPushButton {
+    background-color: #1a1a2e;
+    color: #00ffff;
+    border: 1px solid #00ffff;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-height: 36px;
+}
+
+QPushButton:hover {
+    background-color: #00ffff;
+    color: #0a0a0f;
+}
+
+QPushButton:pressed {
+    background-color: #00cccc;
+    border-color: #00cccc;
+}
+
+QPushButton:disabled {
+    background-color: #1a1a2e;
+    color: #4a4a6a;
+    border-color: #2a2a4a;
+}
+
+QPushButton#dangerButton {
+    border-color: #ff3366;
+    color: #ff3366;
+}
+
+QPushButton#dangerButton:hover {
+    background-color: #ff3366;
+    color: #0a0a0f;
+}
+
+QPushButton#successButton {
+    border-color: #00ff88;
+    color: #00ff88;
+}
+
+QPushButton#successButton:hover {
+    background-color: #00ff88;
+    color: #0a0a0f;
+}
+
+QPushButton#warningButton {
+    border-color: #ffff00;
+    color: #ffff00;
+}
+
+QPushButton#warningButton:hover {
+    background-color: #ffff00;
+    color: #0a0a0f;
+}
+
+/* ================== 入力フィールド ================== */
+
+QLineEdit {
+    background-color: #0a0a0f;
+    color: #00ffff;
+    border: 1px solid #2a2a4a;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: "SF Mono", "Monaco", monospace;
+    selection-background-color: #00ffff;
+    selection-color: #0a0a0f;
+}
+
+QLineEdit:focus {
+    border-color: #00ffff;
+}
+
+QLineEdit:disabled {
+    color: #4a4a6a;
+    border-color: #1a1a2e;
+}
+
+/* ================== スピンボックス ================== */
+
+QSpinBox, QDoubleSpinBox {
+    background-color: #0a0a0f;
+    color: #00ffff;
+    border: 1px solid #2a2a4a;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-family: "SF Mono", "Monaco", monospace;
+}
+
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: #00ffff;
+}
+
+QSpinBox::up-button, QDoubleSpinBox::up-button,
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    background-color: #1a1a2e;
+    border: none;
+    width: 20px;
+}
+
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
+    background-color: #00ffff;
+}
+
+/* ================== コンボボックス ================== */
+
+QComboBox {
+    background-color: #0a0a0f;
+    color: #00ffff;
+    border: 1px solid #2a2a4a;
+    border-radius: 4px;
+    padding: 8px 12px;
+    min-width: 120px;
+}
+
+QComboBox:focus {
+    border-color: #00ffff;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 30px;
+}
+
+QComboBox::down-arrow {
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #12121a;
+    color: #e0e0ff;
+    border: 1px solid #00ffff;
+    selection-background-color: #00ffff;
+    selection-color: #0a0a0f;
+}
+
+/* ================== スライダー ================== */
+
+QSlider::groove:horizontal {
+    background-color: #1a1a2e;
+    height: 8px;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #00ffff;
+    width: 20px;
+    height: 20px;
+    margin: -6px 0;
+    border-radius: 10px;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #00ffff;
+}
+
+QSlider::sub-page:horizontal {
+    background-color: #00ffff;
+    border-radius: 4px;
+}
+
+/* ================== プログレスバー ================== */
+
+QProgressBar {
+    background-color: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 4px;
+    text-align: center;
+    color: #e0e0ff;
+    font-weight: bold;
+    min-height: 24px;
+}
+
+QProgressBar::chunk {
+    background-color: #00ffff;
+    border-radius: 3px;
+}
+
+QProgressBar#batteryBar::chunk {
+    background-color: #00ff88;
+}
+
+QProgressBar#batteryBarLow::chunk {
+    background-color: #ff3366;
+}
+
+QProgressBar#batteryBarMedium::chunk {
+    background-color: #ffff00;
+}
+
+/* ================== スクロールバー ================== */
+
+QScrollBar:vertical {
+    background-color: #0a0a0f;
+    width: 12px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #2a2a4a;
+    min-height: 30px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #00ffff;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+QScrollBar:horizontal {
+    background-color: #0a0a0f;
+    height: 12px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #2a2a4a;
+    min-width: 30px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #00ffff;
+}
+
+/* ================== タブ ================== */
+
+QTabWidget::pane {
+    background-color: #12121a;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+QTabBar::tab {
+    background-color: #1a1a2e;
+    color: #8080a0;
+    border: 1px solid #2a2a4a;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    padding: 10px 20px;
+    margin-right: 2px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+QTabBar::tab:selected {
+    background-color: #12121a;
+    color: #00ffff;
+    border-color: #00ffff;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #2a2a4a;
+    color: #e0e0ff;
+}
+
+/* ================== テキストエリア ================== */
+
+QTextEdit, QPlainTextEdit {
+    background-color: #0a0a0f;
+    color: #00ff88;
+    border: 1px solid #2a2a4a;
+    border-radius: 4px;
+    padding: 8px;
+    font-family: "SF Mono", "Monaco", "Menlo", monospace;
+    font-size: 12px;
+}
+
+QTextEdit:focus, QPlainTextEdit:focus {
+    border-color: #00ffff;
+}
+
+/* ================== ツールチップ ================== */
+
+QToolTip {
+    background-color: #1a1a2e;
+    color: #e0e0ff;
+    border: 1px solid #00ffff;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+/* ================== メニュー ================== */
+
+QMenuBar {
+    background-color: #0a0a0f;
+    color: #e0e0ff;
+    border-bottom: 1px solid #2a2a4a;
+    padding: 4px;
+}
+
+QMenuBar::item {
+    padding: 8px 16px;
+    border-radius: 4px;
+}
+
+QMenuBar::item:selected {
+    background-color: #00ffff;
+    color: #0a0a0f;
+}
+
+QMenu {
+    background-color: #12121a;
+    color: #e0e0ff;
+    border: 1px solid #2a2a4a;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+QMenu::item {
+    padding: 8px 24px;
+    border-radius: 4px;
+}
+
+QMenu::item:selected {
+    background-color: #00ffff;
+    color: #0a0a0f;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #2a2a4a;
+    margin: 4px 8px;
+}
+
+/* ================== ステータスバー ================== */
+
+QStatusBar {
+    background-color: #0a0a0f;
+    color: #8080a0;
+    border-top: 1px solid #2a2a4a;
+    padding: 4px 8px;
+}
+
+QStatusBar::item {
+    border: none;
+}
+
+/* ================== カスタムウィジェット ================== */
+
+/* バッテリーウィジェット */
+QWidget#batteryWidget {
+    background-color: #12121a;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+}
+
+/* IMUウィジェット */
+QWidget#imuWidget {
+    background-color: #12121a;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+}
+
+/* コントローラーウィジェット */
+QWidget#controllerWidget {
+    background-color: #12121a;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+}
+
+/* カメラウィジェット */
+QWidget#cameraWidget {
+    background-color: #0a0a0f;
+    border: 2px solid #00ffff;
+    border-radius: 8px;
+}
+
+/* ステータスウィジェット */
+QWidget#statusWidget {
+    background-color: #12121a;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+}
+
+/* ================== グロー効果用スタイル ================== */
+
+QLabel#glowCyan {
+    color: #00ffff;
+}
+
+QLabel#glowMagenta {
+    color: #ff00ff;
+}
+
+QLabel#glowGreen {
+    color: #00ff88;
+}
+
+QLabel#glowYellow {
+    color: #ffff00;
+}
+
+QLabel#glowRed {
+    color: #ff3366;
+}
+
