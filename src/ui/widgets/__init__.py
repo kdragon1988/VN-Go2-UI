@@ -11,6 +11,7 @@ from .camera_widget import CameraWidget
 from .status_widget import StatusWidget
 from .robot_view_widget import RobotViewWidget
 from .speed_widget import SpeedWidget
+from .actions_widget import ActionsWidget
 
 __all__ = [
     "BatteryWidget",
@@ -20,5 +21,6 @@ __all__ = [
     "StatusWidget",
     "RobotViewWidget",
     "SpeedWidget",
+    "ActionsWidget",
 ]
 

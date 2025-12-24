@@ -2,6 +2,7 @@
 スピードウィジェット
 
 Go2の現在速度を表示するウィジェット
+Mission Impossible風タクティカルデザイン
 
 主な機能:
 - 前後・左右速度の表示
@@ -54,13 +55,13 @@ class SpeedGauge(QWidget):
         centerY = rect.height() / 2
         radius = min(centerX, centerY) - 10
 
-        # 背景円
-        painter.setPen(QPen(QColor("#2a2a4a"), 2))
-        painter.setBrush(QBrush(QColor("#0a0a0f")))
+        # 背景円 - タクティカル風
+        painter.setPen(QPen(QColor("#1A1A1A"), 2))
+        painter.setBrush(QBrush(QColor("#050505")))
         painter.drawEllipse(QPointF(centerX, centerY), radius, radius)
 
         # グリッド
-        painter.setPen(QPen(QColor("#1a1a2e"), 1))
+        painter.setPen(QPen(QColor("#111111"), 1))
         # 十字線
         painter.drawLine(int(centerX), int(centerY - radius), int(centerX), int(centerY + radius))
         painter.drawLine(int(centerX - radius), int(centerY), int(centerX + radius), int(centerY))
@@ -75,7 +76,7 @@ class SpeedGauge(QWidget):
 
         # ベクトル線
         if abs(self._vx) > 0.01 or abs(self._vy) > 0.01:
-            painter.setPen(QPen(QColor("#00ffff"), 3))
+            painter.setPen(QPen(QColor("#DC143C"), 3))
             painter.drawLine(int(centerX), int(centerY), int(vecX), int(vecY))
 
             # 矢印の先端
@@ -93,16 +94,16 @@ class SpeedGauge(QWidget):
             )
             
             arrow = QPolygonF([QPointF(vecX, vecY), p1, p2])
-            painter.setBrush(QBrush(QColor("#00ffff")))
+            painter.setBrush(QBrush(QColor("#DC143C")))
             painter.drawPolygon(arrow)
 
         # 中心点
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QBrush(QColor("#ff00ff")))
+        painter.setBrush(QBrush(QColor("#FFFFFF")))
         painter.drawEllipse(QPointF(centerX, centerY), 4, 4)
 
         # 外枠
-        painter.setPen(QPen(QColor("#00ffff"), 2))
+        painter.setPen(QPen(QColor("#DC143C"), 2))
         painter.setBrush(Qt.NoBrush)
         painter.drawEllipse(QPointF(centerX, centerY), radius, radius)
 
@@ -134,13 +135,13 @@ class SpeedWidget(QWidget):
         """UIコンポーネントの初期化"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setSpacing(10)
 
         # タイトル
-        titleLabel = QLabel("🏃 VELOCITY")
+        titleLabel = QLabel("◆ VELOCITY DATA")
         titleLabel.setStyleSheet("""
-            color: #00ffff;
-            font-size: 11px;
+            color: #DC143C;
+            font-size: 10px;
             font-weight: bold;
             letter-spacing: 3px;
         """)
@@ -156,65 +157,65 @@ class SpeedWidget(QWidget):
 
         # 数値表示
         valuesLayout = QVBoxLayout()
-        valuesLayout.setSpacing(8)
+        valuesLayout.setSpacing(6)
 
         # Vx (前後)
         vxContainer = QVBoxLayout()
+        vxContainer.setSpacing(2)
         vxLabel = QLabel("Vx (FWD)")
-        vxLabel.setStyleSheet("color: #8080a0; font-size: 9px;")
+        vxLabel.setStyleSheet("color: #404040; font-size: 9px; letter-spacing: 1px;")
         vxContainer.addWidget(vxLabel)
         
         self.vxValue = QLabel("0.00")
         self.vxValue.setStyleSheet("""
-            color: #00ffff;
+            color: #DC143C;
             font-size: 18px;
             font-weight: bold;
-            font-family: "SF Mono", monospace;
         """)
         vxContainer.addWidget(self.vxValue)
         
         vxUnit = QLabel("m/s")
-        vxUnit.setStyleSheet("color: #8080a0; font-size: 9px;")
+        vxUnit.setStyleSheet("color: #404040; font-size: 9px;")
         vxContainer.addWidget(vxUnit)
         valuesLayout.addLayout(vxContainer)
 
         # Vy (左右)
         vyContainer = QVBoxLayout()
+        vyContainer.setSpacing(2)
         vyLabel = QLabel("Vy (LAT)")
-        vyLabel.setStyleSheet("color: #8080a0; font-size: 9px;")
+        vyLabel.setStyleSheet("color: #404040; font-size: 9px; letter-spacing: 1px;")
         vyContainer.addWidget(vyLabel)
         
         self.vyValue = QLabel("0.00")
         self.vyValue.setStyleSheet("""
-            color: #ff00ff;
+            color: #FFFFFF;
             font-size: 18px;
             font-weight: bold;
-            font-family: "SF Mono", monospace;
         """)
         vyContainer.addWidget(self.vyValue)
         
         vyUnit = QLabel("m/s")
-        vyUnit.setStyleSheet("color: #8080a0; font-size: 9px;")
+        vyUnit.setStyleSheet("color: #404040; font-size: 9px;")
         vyContainer.addWidget(vyUnit)
         valuesLayout.addLayout(vyContainer)
 
         # Vyaw (旋回)
         vyawContainer = QVBoxLayout()
+        vyawContainer.setSpacing(2)
         vyawLabel = QLabel("Vyaw (ROT)")
-        vyawLabel.setStyleSheet("color: #8080a0; font-size: 9px;")
+        vyawLabel.setStyleSheet("color: #404040; font-size: 9px; letter-spacing: 1px;")
         vyawContainer.addWidget(vyawLabel)
         
         self.vyawValue = QLabel("0.00")
         self.vyawValue.setStyleSheet("""
-            color: #ffff00;
+            color: #FF9100;
             font-size: 18px;
             font-weight: bold;
-            font-family: "SF Mono", monospace;
         """)
         vyawContainer.addWidget(self.vyawValue)
         
         vyawUnit = QLabel("rad/s")
-        vyawUnit.setStyleSheet("color: #8080a0; font-size: 9px;")
+        vyawUnit.setStyleSheet("color: #404040; font-size: 9px;")
         vyawContainer.addWidget(vyawUnit)
         valuesLayout.addLayout(vyawContainer)
 
@@ -246,26 +247,23 @@ class SpeedWidget(QWidget):
         self.vyawValue.setText(f"{vyaw:+.2f}")
 
         # 色の更新（速度に応じて）
-        vxColor = "#00ffff" if abs(vx) < 1.0 else "#ffff00"
-        vyColor = "#ff00ff" if abs(vy) < 0.3 else "#ffff00"
-        vyawColor = "#ffff00" if abs(vyaw) < 1.0 else "#ff3366"
+        vxColor = "#DC143C" if abs(vx) < 1.0 else "#FF9100"
+        vyColor = "#FFFFFF" if abs(vy) < 0.3 else "#FF9100"
+        vyawColor = "#FF9100" if abs(vyaw) < 1.0 else "#DC143C"
 
         self.vxValue.setStyleSheet(f"""
             color: {vxColor};
             font-size: 18px;
             font-weight: bold;
-            font-family: "SF Mono", monospace;
         """)
         self.vyValue.setStyleSheet(f"""
             color: {vyColor};
             font-size: 18px;
             font-weight: bold;
-            font-family: "SF Mono", monospace;
         """)
         self.vyawValue.setStyleSheet(f"""
             color: {vyawColor};
             font-size: 18px;
             font-weight: bold;
-            font-family: "SF Mono", monospace;
         """)
 

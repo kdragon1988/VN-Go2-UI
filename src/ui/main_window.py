@@ -1,10 +1,11 @@
 """
 メインウィンドウ
 
-Unitree Go2 Controller のメインUI
+Unitree Go2 Controller - Mission Impossible Edition
+戦術的HUDインターフェース
 
 主な機能:
-- ダッシュボードレイアウト
+- タクティカルダッシュボードレイアウト
 - 全ウィジェットの統合
 - キーボードショートカット
 """
@@ -19,7 +20,8 @@ from PySide6.QtGui import QFont, QKeySequence, QShortcut, QAction
 
 from .widgets import (
     BatteryWidget, IMUWidget, ControllerWidget,
-    CameraWidget, StatusWidget, RobotViewWidget, SpeedWidget
+    CameraWidget, StatusWidget, RobotViewWidget, SpeedWidget,
+    ActionsWidget
 )
 from .styles import loadStylesheet
 
@@ -28,19 +30,19 @@ class MainWindow(QMainWindow):
     """
     メインウィンドウ
 
-    サイバーパンク風ダッシュボードUIのメインウィンドウ
+    Mission Impossible風タクティカルHUDのメインウィンドウ
     """
 
     def __init__(self):
         """メインウィンドウの初期化"""
         super().__init__()
         
-        self.setWindowTitle("UNITREE GO2 CONTROLLER // CYBERPUNK EDITION")
-        self.setMinimumSize(1400, 900)
-        self.resize(1600, 1000)
+        self.setWindowTitle("◆ UNITREE GO2 // TACTICAL INTERFACE ◆")
+        self.setMinimumSize(1600, 900)
+        self.resize(1900, 1000)
         
-        # スタイルシート適用
-        stylesheet = loadStylesheet("cyberpunk")
+        # スタイルシート適用（ミッションインポッシブル風）
+        stylesheet = loadStylesheet("mission")
         self.setStyleSheet(stylesheet)
         
         self._setupUi()
@@ -57,54 +59,69 @@ class MainWindow(QMainWindow):
 
         # メインレイアウト
         mainLayout = QHBoxLayout(centralWidget)
-        mainLayout.setContentsMargins(16, 16, 16, 16)
-        mainLayout.setSpacing(16)
+        mainLayout.setContentsMargins(12, 12, 12, 12)
+        mainLayout.setSpacing(12)
 
         # === 左パネル（ステータス・コントロール） ===
         leftPanel = QFrame()
+        leftPanel.setObjectName("tacticalPanel")
         leftPanel.setStyleSheet("""
-            QFrame {
-                background-color: #12121a;
-                border: 1px solid #2a2a4a;
-                border-radius: 12px;
+            QFrame#tacticalPanel {
+                background-color: #0A0A0A;
+                border: 1px solid #1A1A1A;
+                border-top: 2px solid #DC143C;
             }
         """)
-        leftPanel.setFixedWidth(320)
+        leftPanel.setFixedWidth(340)
         leftLayout = QVBoxLayout(leftPanel)
         leftLayout.setContentsMargins(0, 0, 0, 0)
         leftLayout.setSpacing(0)
 
-        # ロゴ/タイトル
-        titleContainer = QWidget()
-        titleLayout = QVBoxLayout(titleContainer)
-        titleLayout.setContentsMargins(16, 20, 16, 16)
+        # ヘッダー - IMF Tactical Style
+        headerContainer = QWidget()
+        headerContainer.setStyleSheet("background-color: #050505;")
+        headerLayout = QVBoxLayout(headerContainer)
+        headerLayout.setContentsMargins(16, 16, 16, 12)
+        headerLayout.setSpacing(4)
         
-        titleLabel = QLabel("UNITREE GO2")
-        titleLabel.setStyleSheet("""
-            color: #00ffff;
-            font-size: 22px;
+        # クラシファイドマーカー
+        classifiedLabel = QLabel("◆◆◆ CLASSIFIED ◆◆◆")
+        classifiedLabel.setStyleSheet("""
+            color: #DC143C;
+            font-size: 9px;
             font-weight: bold;
-            letter-spacing: 6px;
-        """)
-        titleLabel.setAlignment(Qt.AlignCenter)
-        titleLayout.addWidget(titleLabel)
-
-        subtitleLabel = QLabel("CONTROL SYSTEM v1.0")
-        subtitleLabel.setStyleSheet("""
-            color: #8080a0;
-            font-size: 10px;
             letter-spacing: 4px;
         """)
-        subtitleLabel.setAlignment(Qt.AlignCenter)
-        titleLayout.addWidget(subtitleLabel)
+        classifiedLabel.setAlignment(Qt.AlignCenter)
+        headerLayout.addWidget(classifiedLabel)
+        
+        # メインタイトル
+        titleLabel = QLabel("UNITREE GO2")
+        titleLabel.setStyleSheet("""
+            color: #FFFFFF;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 8px;
+        """)
+        titleLabel.setAlignment(Qt.AlignCenter)
+        headerLayout.addWidget(titleLabel)
 
-        leftLayout.addWidget(titleContainer)
+        # サブタイトル
+        subtitleLabel = QLabel("TACTICAL CONTROL SYSTEM v1.0")
+        subtitleLabel.setStyleSheet("""
+            color: #404040;
+            font-size: 9px;
+            letter-spacing: 3px;
+        """)
+        subtitleLabel.setAlignment(Qt.AlignCenter)
+        headerLayout.addWidget(subtitleLabel)
+
+        leftLayout.addWidget(headerContainer)
 
         # セパレーター
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
-        separator.setStyleSheet("background-color: #2a2a4a;")
-        separator.setFixedHeight(1)
+        separator.setStyleSheet("background-color: #DC143C; min-height: 2px; max-height: 2px;")
         leftLayout.addWidget(separator)
 
         # ステータスウィジェット
@@ -117,55 +134,76 @@ class MainWindow(QMainWindow):
         centerPanel = QWidget()
         centerLayout = QVBoxLayout(centerPanel)
         centerLayout.setContentsMargins(0, 0, 0, 0)
-        centerLayout.setSpacing(16)
+        centerLayout.setSpacing(12)
 
-        # ヘッダー（時刻表示）
+        # ヘッダー（時刻表示）- 作戦時刻風
         headerLayout = QHBoxLayout()
+        headerLayout.setSpacing(16)
         
+        # ライブフィードインジケーター
+        liveIndicator = QLabel("● LIVE")
+        liveIndicator.setStyleSheet("""
+            color: #DC143C;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        """)
+        headerLayout.addWidget(liveIndicator)
+        
+        # 時刻表示
         self.clockLabel = QLabel("00:00:00")
         self.clockLabel.setStyleSheet("""
-            color: #00ffff;
+            color: #FFFFFF;
             font-size: 18px;
-            font-family: "SF Mono", monospace;
             font-weight: bold;
             letter-spacing: 2px;
         """)
         headerLayout.addWidget(self.clockLabel)
+        
         headerLayout.addStretch()
 
+        # 日付表示
         self.dateLabel = QLabel("2025-01-01")
         self.dateLabel.setStyleSheet("""
-            color: #8080a0;
-            font-size: 12px;
-            font-family: "SF Mono", monospace;
-            letter-spacing: 1px;
+            color: #404040;
+            font-size: 11px;
+            letter-spacing: 2px;
         """)
         headerLayout.addWidget(self.dateLabel)
+        
+        # ミッションステータス
+        missionLabel = QLabel("◆ MISSION ACTIVE")
+        missionLabel.setStyleSheet("""
+            color: #00E676;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        """)
+        headerLayout.addWidget(missionLabel)
 
         centerLayout.addLayout(headerLayout)
 
-        # カメラウィジェット
+        # カメラウィジェット - 諜報映像風
         self.cameraWidget = CameraWidget()
         self.cameraWidget.setStyleSheet("""
             QWidget#cameraWidget {
-                background-color: #0a0a0f;
-                border: 2px solid #00ffff;
-                border-radius: 12px;
+                background-color: #050505;
+                border: 1px solid #DC143C;
             }
         """)
         centerLayout.addWidget(self.cameraWidget, 2)
 
         # 下部情報パネル
         bottomInfoLayout = QHBoxLayout()
-        bottomInfoLayout.setSpacing(16)
+        bottomInfoLayout.setSpacing(12)
 
         # バッテリーウィジェット
         batteryFrame = QFrame()
         batteryFrame.setStyleSheet("""
             QFrame {
-                background-color: #12121a;
-                border: 1px solid #2a2a4a;
-                border-radius: 12px;
+                background-color: #0A0A0A;
+                border: 1px solid #1A1A1A;
+                border-left: 2px solid #DC143C;
             }
         """)
         batteryFrameLayout = QVBoxLayout(batteryFrame)
@@ -178,9 +216,9 @@ class MainWindow(QMainWindow):
         speedFrame = QFrame()
         speedFrame.setStyleSheet("""
             QFrame {
-                background-color: #12121a;
-                border: 1px solid #2a2a4a;
-                border-radius: 12px;
+                background-color: #0A0A0A;
+                border: 1px solid #1A1A1A;
+                border-left: 2px solid #DC143C;
             }
         """)
         speedFrameLayout = QVBoxLayout(speedFrame)
@@ -197,15 +235,15 @@ class MainWindow(QMainWindow):
         rightPanel = QWidget()
         rightLayout = QVBoxLayout(rightPanel)
         rightLayout.setContentsMargins(0, 0, 0, 0)
-        rightLayout.setSpacing(16)
+        rightLayout.setSpacing(12)
 
         # IMUウィジェット
         imuFrame = QFrame()
         imuFrame.setStyleSheet("""
             QFrame {
-                background-color: #12121a;
-                border: 1px solid #2a2a4a;
-                border-radius: 12px;
+                background-color: #0A0A0A;
+                border: 1px solid #1A1A1A;
+                border-top: 2px solid #DC143C;
             }
         """)
         imuFrameLayout = QVBoxLayout(imuFrame)
@@ -218,9 +256,9 @@ class MainWindow(QMainWindow):
         robotFrame = QFrame()
         robotFrame.setStyleSheet("""
             QFrame {
-                background-color: #12121a;
-                border: 1px solid #2a2a4a;
-                border-radius: 12px;
+                background-color: #0A0A0A;
+                border: 1px solid #1A1A1A;
+                border-top: 2px solid #DC143C;
             }
         """)
         robotFrameLayout = QVBoxLayout(robotFrame)
@@ -233,9 +271,9 @@ class MainWindow(QMainWindow):
         controllerFrame = QFrame()
         controllerFrame.setStyleSheet("""
             QFrame {
-                background-color: #12121a;
-                border: 1px solid #2a2a4a;
-                border-radius: 12px;
+                background-color: #0A0A0A;
+                border: 1px solid #1A1A1A;
+                border-top: 2px solid #DC143C;
             }
         """)
         controllerFrameLayout = QVBoxLayout(controllerFrame)
@@ -245,6 +283,21 @@ class MainWindow(QMainWindow):
         rightLayout.addWidget(controllerFrame, 1)
 
         mainLayout.addWidget(rightPanel)
+
+        # === 最右パネル（特殊動作） ===
+        actionsPanel = QFrame()
+        actionsPanel.setStyleSheet("""
+            QFrame {
+                background-color: #0A0A0A;
+                border: 1px solid #DC143C;
+            }
+        """)
+        actionsPanel.setFixedWidth(280)
+        actionsPanelLayout = QVBoxLayout(actionsPanel)
+        actionsPanelLayout.setContentsMargins(0, 0, 0, 0)
+        self.actionsWidget = ActionsWidget()
+        actionsPanelLayout.addWidget(self.actionsWidget)
+        mainLayout.addWidget(actionsPanel)
 
     def _setupShortcuts(self) -> None:
         """キーボードショートカットの設定"""
@@ -265,23 +318,23 @@ class MainWindow(QMainWindow):
         statusBar = QStatusBar()
         statusBar.setStyleSheet("""
             QStatusBar {
-                background-color: #0a0a0f;
-                color: #8080a0;
-                border-top: 1px solid #2a2a4a;
-                font-family: "SF Mono", monospace;
-                font-size: 11px;
+                background-color: #050505;
+                color: #404040;
+                border-top: 1px solid #1A1A1A;
+                font-size: 10px;
+                letter-spacing: 1px;
             }
         """)
         self.setStatusBar(statusBar)
 
         # 左側: ショートカットヒント
-        hintLabel = QLabel("ESC: Emergency Stop | SPACE: Stand | D: Down")
-        hintLabel.setStyleSheet("color: #4a4a6a; padding: 4px;")
+        hintLabel = QLabel("◆ ESC: ABORT  |  SPACE: DEPLOY  |  D: RETRACT")
+        hintLabel.setStyleSheet("color: #404040; padding: 4px;")
         statusBar.addWidget(hintLabel)
 
         # 右側: バージョン
-        versionLabel = QLabel("v1.0.0 // CYBERPUNK EDITION")
-        versionLabel.setStyleSheet("color: #00ffff; padding: 4px;")
+        versionLabel = QLabel("◆ TACTICAL INTERFACE v1.0")
+        versionLabel.setStyleSheet("color: #DC143C; padding: 4px;")
         statusBar.addPermanentWidget(versionLabel)
 
     def _startClock(self) -> None:
@@ -311,6 +364,7 @@ class MainWindow(QMainWindow):
     def updateConnectionState(self, connected: bool) -> None:
         """接続状態を更新"""
         self.statusWidget.updateConnectionState(connected)
+        self.actionsWidget.setEnabled(connected)
 
     @Slot(str)
     def updateMode(self, mode: str) -> None:
@@ -367,8 +421,8 @@ class MainWindow(QMainWindow):
         """ウィンドウクローズイベント"""
         reply = QMessageBox.question(
             self,
-            "終了確認",
-            "アプリケーションを終了しますか？\n\n"
+            "◆ MISSION ABORT",
+            "ミッションを終了しますか？\n\n"
             "ロボットとの接続が切断されます。",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No

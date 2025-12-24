@@ -2,6 +2,7 @@
 カメラウィジェット
 
 Go2のカメラ映像をリアルタイム表示するウィジェット
+Mission Impossible風タクティカルデザイン
 
 主な機能:
 - 映像フレームのリアルタイム表示
@@ -19,7 +20,7 @@ class CameraWidget(QWidget):
     """
     カメラ映像表示ウィジェット
 
-    Go2の前面カメラ映像をサイバーパンク風エフェクト付きで表示
+    Go2の前面カメラ映像をタクティカルHUDエフェクト付きで表示
     """
 
     def __init__(self, parent=None):
@@ -47,13 +48,16 @@ class CameraWidget(QWidget):
         layout.setSpacing(0)
 
         # ヘッダー
-        headerLayout = QHBoxLayout()
+        headerWidget = QWidget()
+        headerWidget.setStyleSheet("background-color: #050505;")
+        headerLayout = QHBoxLayout(headerWidget)
         headerLayout.setContentsMargins(12, 8, 12, 8)
         
-        titleLabel = QLabel("📹 LIVE FEED")
+        # タイトル
+        titleLabel = QLabel("◆ SURVEILLANCE FEED")
         titleLabel.setStyleSheet("""
-            color: #00ffff;
-            font-size: 11px;
+            color: #DC143C;
+            font-size: 10px;
             font-weight: bold;
             letter-spacing: 3px;
             background: transparent;
@@ -64,7 +68,7 @@ class CameraWidget(QWidget):
         # 録画インジケーター
         self.recLabel = QLabel("● REC")
         self.recLabel.setStyleSheet("""
-            color: #ff3366;
+            color: #DC143C;
             font-size: 10px;
             font-weight: bold;
             background: transparent;
@@ -75,50 +79,51 @@ class CameraWidget(QWidget):
         # FPS表示
         self.fpsLabel = QLabel("0 FPS")
         self.fpsLabel.setStyleSheet("""
-            color: #8080a0;
+            color: #404040;
             font-size: 10px;
-            font-family: "SF Mono", monospace;
             background: transparent;
         """)
         headerLayout.addWidget(self.fpsLabel)
 
-        layout.addLayout(headerLayout)
+        layout.addWidget(headerWidget)
 
         # 映像表示エリア
         self.videoLabel = QLabel()
         self.videoLabel.setAlignment(Qt.AlignCenter)
         self.videoLabel.setMinimumSize(320, 240)
         self.videoLabel.setStyleSheet("""
-            background-color: #0a0a0f;
+            background-color: #050505;
             border: none;
         """)
         
         layout.addWidget(self.videoLabel, 1)
 
         # フッター（オーバーレイ情報）
-        footerLayout = QHBoxLayout()
+        footerWidget = QWidget()
+        footerWidget.setStyleSheet("background-color: #050505;")
+        footerLayout = QHBoxLayout(footerWidget)
         footerLayout.setContentsMargins(12, 8, 12, 8)
         
+        # タイムスタンプ
         self.timestampLabel = QLabel("--:--:--")
         self.timestampLabel.setStyleSheet("""
-            color: #00ff88;
+            color: #00E676;
             font-size: 10px;
-            font-family: "SF Mono", monospace;
             background: transparent;
         """)
         footerLayout.addWidget(self.timestampLabel)
         footerLayout.addStretch()
 
+        # 解像度
         self.resolutionLabel = QLabel("---x---")
         self.resolutionLabel.setStyleSheet("""
-            color: #8080a0;
+            color: #404040;
             font-size: 10px;
-            font-family: "SF Mono", monospace;
             background: transparent;
         """)
         footerLayout.addWidget(self.resolutionLabel)
 
-        layout.addLayout(footerLayout)
+        layout.addWidget(footerWidget)
         
         # プレースホルダー表示（UIセットアップ完了後）
         self._showPlaceholder()
@@ -129,16 +134,23 @@ class CameraWidget(QWidget):
         width, height = 640, 480
         placeholder = np.zeros((height, width, 3), dtype=np.uint8)
         
-        # グリッドパターン
+        # グリッドパターン - タクティカル風
+        gridColor = [20, 20, 25]
         for y in range(0, height, 40):
-            placeholder[y:y+1, :] = [20, 40, 40]
+            placeholder[y:y+1, :] = gridColor
         for x in range(0, width, 40):
-            placeholder[:, x:x+1] = [20, 40, 40]
+            placeholder[:, x:x+1] = gridColor
         
         # 中央のボックス
         cx, cy = width // 2, height // 2
         boxW, boxH = 200, 60
-        placeholder[cy-boxH//2:cy+boxH//2, cx-boxW//2:cx+boxW//2] = [30, 30, 50]
+        
+        # ボーダー
+        borderColor = [60, 20, 30]  # Dark red
+        placeholder[cy-boxH//2:cy-boxH//2+2, cx-boxW//2:cx+boxW//2] = borderColor
+        placeholder[cy+boxH//2-2:cy+boxH//2, cx-boxW//2:cx+boxW//2] = borderColor
+        placeholder[cy-boxH//2:cy+boxH//2, cx-boxW//2:cx-boxW//2+2] = borderColor
+        placeholder[cy-boxH//2:cy+boxH//2, cx+boxW//2-2:cx+boxW//2] = borderColor
         
         self._setFrame(placeholder)
         self.resolutionLabel.setText("NO SIGNAL")

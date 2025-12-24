@@ -13,6 +13,9 @@ from .go2_client import Go2Client
 from .ws_client import WebSocketClient
 from .webrtc_client import WebRTCClient, ConnectionMode
 from .state import RobotState, MotorState, IMUState
+from .go2_commands import (
+    RtcTopic, SportCmd, ObstacleAvoidCmd, GaitType, SpeedLevel
+)
 
 __all__ = [
     "Go2Client",
@@ -21,6 +24,11 @@ __all__ = [
     "ConnectionMode",
     "RobotState",
     "MotorState",
-    "IMUState"
+    "IMUState",
+    "RtcTopic",
+    "SportCmd",
+    "ObstacleAvoidCmd",
+    "GaitType",
+    "SpeedLevel",
 ]
 

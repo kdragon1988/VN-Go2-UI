@@ -2,6 +2,7 @@
 バッテリーウィジェット
 
 Go2のバッテリー状態を視覚的に表示するウィジェット
+Mission Impossible風タクティカルデザイン
 
 主な機能:
 - バッテリー残量のプログレスバー表示
@@ -21,7 +22,7 @@ class BatteryWidget(QWidget):
     """
     バッテリー状態表示ウィジェット
 
-    サイバーパンク風のネオングロー効果付きバッテリーインジケーター
+    タクティカルHUD風バッテリーインジケーター
     """
 
     def __init__(self, parent=None):
@@ -46,16 +47,15 @@ class BatteryWidget(QWidget):
         """UIコンポーネントの初期化"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setSpacing(10)
 
         # タイトル
         titleLayout = QHBoxLayout()
         
-        titleLabel = QLabel("⚡ BATTERY")
-        titleLabel.setObjectName("subtitleLabel")
+        titleLabel = QLabel("◆ POWER SYSTEM")
         titleLabel.setStyleSheet("""
-            color: #00ff88;
-            font-size: 11px;
+            color: #DC143C;
+            font-size: 10px;
             font-weight: bold;
             letter-spacing: 3px;
         """)
@@ -65,10 +65,9 @@ class BatteryWidget(QWidget):
         # パーセント表示
         self.percentLabel = QLabel("0%")
         self.percentLabel.setStyleSheet("""
-            color: #00ff88;
-            font-size: 24px;
+            color: #00E676;
+            font-size: 22px;
             font-weight: bold;
-            font-family: "SF Mono", "Monaco", monospace;
         """)
         titleLayout.addWidget(self.percentLabel)
         
@@ -79,17 +78,15 @@ class BatteryWidget(QWidget):
         self.batteryBar.setRange(0, 100)
         self.batteryBar.setValue(0)
         self.batteryBar.setTextVisible(False)
-        self.batteryBar.setFixedHeight(24)
+        self.batteryBar.setFixedHeight(20)
         self.batteryBar.setStyleSheet("""
             QProgressBar {
-                background-color: #1a1a2e;
-                border: 1px solid #2a2a4a;
-                border-radius: 4px;
+                background-color: #111111;
+                border: 1px solid #1A1A1A;
+                border-radius: 0px;
             }
             QProgressBar::chunk {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #00ff88, stop:1 #00ffaa);
-                border-radius: 3px;
+                background-color: #00E676;
             }
         """)
         layout.addWidget(self.batteryBar)
@@ -100,13 +97,14 @@ class BatteryWidget(QWidget):
 
         # 電圧
         voltageContainer = QVBoxLayout()
+        voltageContainer.setSpacing(2)
         voltageTitle = QLabel("VOLTAGE")
-        voltageTitle.setStyleSheet("color: #8080a0; font-size: 9px; letter-spacing: 1px;")
+        voltageTitle.setStyleSheet("color: #404040; font-size: 9px; letter-spacing: 1px;")
         self.voltageLabel = QLabel("0.0V")
         self.voltageLabel.setStyleSheet("""
-            color: #00ffff;
+            color: #FFFFFF;
             font-size: 14px;
-            font-family: "SF Mono", "Monaco", monospace;
+            font-weight: bold;
         """)
         voltageContainer.addWidget(voltageTitle)
         voltageContainer.addWidget(self.voltageLabel)
@@ -114,13 +112,14 @@ class BatteryWidget(QWidget):
 
         # 電流
         currentContainer = QVBoxLayout()
+        currentContainer.setSpacing(2)
         currentTitle = QLabel("CURRENT")
-        currentTitle.setStyleSheet("color: #8080a0; font-size: 9px; letter-spacing: 1px;")
+        currentTitle.setStyleSheet("color: #404040; font-size: 9px; letter-spacing: 1px;")
         self.currentLabel = QLabel("0.0A")
         self.currentLabel.setStyleSheet("""
-            color: #00ffff;
+            color: #FFFFFF;
             font-size: 14px;
-            font-family: "SF Mono", "Monaco", monospace;
+            font-weight: bold;
         """)
         currentContainer.addWidget(currentTitle)
         currentContainer.addWidget(self.currentLabel)
@@ -128,13 +127,14 @@ class BatteryWidget(QWidget):
 
         # 温度
         tempContainer = QVBoxLayout()
+        tempContainer.setSpacing(2)
         tempTitle = QLabel("TEMP")
-        tempTitle.setStyleSheet("color: #8080a0; font-size: 9px; letter-spacing: 1px;")
+        tempTitle.setStyleSheet("color: #404040; font-size: 9px; letter-spacing: 1px;")
         self.tempLabel = QLabel("0°C")
         self.tempLabel.setStyleSheet("""
-            color: #00ffff;
+            color: #FFFFFF;
             font-size: 14px;
-            font-family: "SF Mono", "Monaco", monospace;
+            font-weight: bold;
         """)
         tempContainer.addWidget(tempTitle)
         tempContainer.addWidget(self.tempLabel)
@@ -146,9 +146,10 @@ class BatteryWidget(QWidget):
         # 警告ラベル
         self.warningLabel = QLabel("")
         self.warningLabel.setStyleSheet("""
-            color: #ff3366;
-            font-size: 11px;
+            color: #DC143C;
+            font-size: 10px;
             font-weight: bold;
+            letter-spacing: 1px;
         """)
         self.warningLabel.setAlignment(Qt.AlignCenter)
         self.warningLabel.hide()
@@ -178,62 +179,43 @@ class BatteryWidget(QWidget):
 
         # バッテリーレベルに応じた色変更
         if self._level <= 10:
-            barStyle = """
-                QProgressBar::chunk {
-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                        stop:0 #ff3366, stop:1 #ff0044);
-                    border-radius: 3px;
-                }
-            """
+            barColor = "#DC143C"
             self.percentLabel.setStyleSheet("""
-                color: #ff3366;
-                font-size: 24px;
+                color: #DC143C;
+                font-size: 22px;
                 font-weight: bold;
-                font-family: "SF Mono", "Monaco", monospace;
             """)
-            self.warningLabel.setText("⚠️ LOW BATTERY - CRITICAL")
+            self.warningLabel.setText("⚠ CRITICAL - LOW POWER")
             self.warningLabel.show()
         elif self._level <= 30:
-            barStyle = """
-                QProgressBar::chunk {
-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                        stop:0 #ffff00, stop:1 #ffcc00);
-                    border-radius: 3px;
-                }
-            """
+            barColor = "#FF9100"
             self.percentLabel.setStyleSheet("""
-                color: #ffff00;
-                font-size: 24px;
+                color: #FF9100;
+                font-size: 22px;
                 font-weight: bold;
-                font-family: "SF Mono", "Monaco", monospace;
             """)
-            self.warningLabel.setText("⚠️ LOW BATTERY")
-            self.warningLabel.setStyleSheet("color: #ffff00; font-size: 11px; font-weight: bold;")
+            self.warningLabel.setText("⚠ LOW BATTERY")
+            self.warningLabel.setStyleSheet("color: #FF9100; font-size: 10px; font-weight: bold; letter-spacing: 1px;")
             self.warningLabel.show()
         else:
-            barStyle = """
-                QProgressBar::chunk {
-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                        stop:0 #00ff88, stop:1 #00ffaa);
-                    border-radius: 3px;
-                }
-            """
+            barColor = "#00E676"
             self.percentLabel.setStyleSheet("""
-                color: #00ff88;
-                font-size: 24px;
+                color: #00E676;
+                font-size: 22px;
                 font-weight: bold;
-                font-family: "SF Mono", "Monaco", monospace;
             """)
             self.warningLabel.hide()
 
         # バースタイル更新
         self.batteryBar.setStyleSheet(f"""
             QProgressBar {{
-                background-color: #1a1a2e;
-                border: 1px solid #2a2a4a;
-                border-radius: 4px;
+                background-color: #111111;
+                border: 1px solid #1A1A1A;
+                border-radius: 0px;
             }}
-            {barStyle}
+            QProgressBar::chunk {{
+                background-color: {barColor};
+            }}
         """)
 
     @property

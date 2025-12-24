@@ -2,6 +2,7 @@
 IMUウィジェット
 
 Go2のIMU（慣性計測装置）データを視覚的に表示するウィジェット
+Mission Impossible風タクティカルデザイン
 
 主な機能:
 - Roll/Pitch/Yaw角度のゲージ表示
@@ -56,13 +57,13 @@ class AttitudeIndicator(QWidget):
         centerY = rect.height() / 2
         radius = min(centerX, centerY) - 10
 
-        # 背景円
-        painter.setPen(QPen(QColor("#2a2a4a"), 2))
-        painter.setBrush(QBrush(QColor("#0a0a0f")))
+        # 背景円 - タクティカル風
+        painter.setPen(QPen(QColor("#1A1A1A"), 2))
+        painter.setBrush(QBrush(QColor("#050505")))
         painter.drawEllipse(QPointF(centerX, centerY), radius, radius)
 
         # グリッド線
-        painter.setPen(QPen(QColor("#1a1a2e"), 1))
+        painter.setPen(QPen(QColor("#111111"), 1))
         for i in range(-2, 3):
             y = centerY + i * radius / 3
             painter.drawLine(
@@ -78,32 +79,20 @@ class AttitudeIndicator(QWidget):
         # 地平線（ピッチに応じてオフセット）
         pitchOffset = self._pitch * radius / 45  # 45度で画面端
         
-        # 空（上半分）
-        skyGrad = QLinearGradient(0, -radius, 0, pitchOffset)
-        skyGrad.setColorAt(0, QColor("#1a1a4a"))
-        skyGrad.setColorAt(1, QColor("#2a2a6a"))
-        painter.setBrush(QBrush(skyGrad))
-        painter.setPen(Qt.NoPen)
-        
-        # 地面（下半分）
-        groundGrad = QLinearGradient(0, pitchOffset, 0, radius)
-        groundGrad.setColorAt(0, QColor("#2a4a2a"))
-        groundGrad.setColorAt(1, QColor("#1a2a1a"))
-
         # 地平線
-        painter.setPen(QPen(QColor("#00ffff"), 2))
+        painter.setPen(QPen(QColor("#DC143C"), 2))
         painter.drawLine(int(-radius * 0.7), int(pitchOffset), int(radius * 0.7), int(pitchOffset))
 
         painter.restore()
 
-        # センターマーク
-        painter.setPen(QPen(QColor("#ff00ff"), 2))
+        # センターマーク - クリムゾン
+        painter.setPen(QPen(QColor("#DC143C"), 2))
         painter.drawLine(int(centerX - 20), int(centerY), int(centerX - 5), int(centerY))
         painter.drawLine(int(centerX + 5), int(centerY), int(centerX + 20), int(centerY))
         painter.drawLine(int(centerX), int(centerY - 5), int(centerX), int(centerY + 5))
 
-        # 外枠（ネオングロー効果）
-        painter.setPen(QPen(QColor("#00ffff"), 2))
+        # 外枠
+        painter.setPen(QPen(QColor("#DC143C"), 2))
         painter.setBrush(Qt.NoBrush)
         painter.drawEllipse(QPointF(centerX, centerY), radius, radius)
 
@@ -137,13 +126,13 @@ class IMUWidget(QWidget):
         """UIコンポーネントの初期化"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setSpacing(10)
 
         # タイトル
-        titleLabel = QLabel("📐 ATTITUDE")
+        titleLabel = QLabel("◆ ATTITUDE SENSOR")
         titleLabel.setStyleSheet("""
-            color: #ff00ff;
-            font-size: 11px;
+            color: #DC143C;
+            font-size: 10px;
             font-weight: bold;
             letter-spacing: 3px;
         """)
@@ -159,20 +148,20 @@ class IMUWidget(QWidget):
 
         # 角度表示
         anglesLayout = QVBoxLayout()
-        anglesLayout.setSpacing(8)
+        anglesLayout.setSpacing(6)
 
         # Roll
-        rollContainer = self._createAngleDisplay("ROLL", "#00ffff")
+        rollContainer = self._createAngleDisplay("ROLL", "#DC143C")
         self.rollLabel = rollContainer.findChild(QLabel, "valueLabel")
         anglesLayout.addLayout(rollContainer)
 
         # Pitch
-        pitchContainer = self._createAngleDisplay("PITCH", "#ff00ff")
+        pitchContainer = self._createAngleDisplay("PITCH", "#FFFFFF")
         self.pitchLabel = pitchContainer.findChild(QLabel, "valueLabel")
         anglesLayout.addLayout(pitchContainer)
 
         # Yaw
-        yawContainer = self._createAngleDisplay("YAW", "#ffff00")
+        yawContainer = self._createAngleDisplay("YAW", "#00E676")
         self.yawLabel = yawContainer.findChild(QLabel, "valueLabel")
         anglesLayout.addLayout(yawContainer)
 
@@ -184,36 +173,34 @@ class IMUWidget(QWidget):
 
         # 詳細データ（角速度・加速度）
         detailsLayout = QGridLayout()
-        detailsLayout.setSpacing(8)
+        detailsLayout.setSpacing(6)
 
         # 角速度
         gyroTitle = QLabel("GYROSCOPE (rad/s)")
-        gyroTitle.setStyleSheet("color: #8080a0; font-size: 9px;")
+        gyroTitle.setStyleSheet("color: #404040; font-size: 9px; letter-spacing: 1px;")
         detailsLayout.addWidget(gyroTitle, 0, 0, 1, 3)
 
         self.gyroLabels = []
         for i, axis in enumerate(["X", "Y", "Z"]):
             label = QLabel(f"{axis}: 0.00")
             label.setStyleSheet("""
-                color: #00ffff;
-                font-size: 11px;
-                font-family: "SF Mono", "Monaco", monospace;
+                color: #FFFFFF;
+                font-size: 10px;
             """)
             self.gyroLabels.append(label)
             detailsLayout.addWidget(label, 1, i)
 
         # 加速度
         accelTitle = QLabel("ACCELEROMETER (m/s²)")
-        accelTitle.setStyleSheet("color: #8080a0; font-size: 9px;")
+        accelTitle.setStyleSheet("color: #404040; font-size: 9px; letter-spacing: 1px;")
         detailsLayout.addWidget(accelTitle, 2, 0, 1, 3)
 
         self.accelLabels = []
         for i, axis in enumerate(["X", "Y", "Z"]):
             label = QLabel(f"{axis}: 0.00")
             label.setStyleSheet("""
-                color: #ff00ff;
-                font-size: 11px;
-                font-family: "SF Mono", "Monaco", monospace;
+                color: #DC143C;
+                font-size: 10px;
             """)
             self.accelLabels.append(label)
             detailsLayout.addWidget(label, 3, i)
@@ -235,7 +222,7 @@ class IMUWidget(QWidget):
         layout.setSpacing(8)
 
         nameLabel = QLabel(name)
-        nameLabel.setStyleSheet(f"color: #8080a0; font-size: 10px; min-width: 40px;")
+        nameLabel.setStyleSheet(f"color: #404040; font-size: 9px; min-width: 40px; letter-spacing: 1px;")
         layout.addWidget(nameLabel)
 
         valueLabel = QLabel("0.0°")
@@ -244,7 +231,6 @@ class IMUWidget(QWidget):
             color: {color};
             font-size: 16px;
             font-weight: bold;
-            font-family: "SF Mono", "Monaco", monospace;
             min-width: 70px;
         """)
         layout.addWidget(valueLabel)

@@ -6,12 +6,18 @@ unitree_webrtc_connectを使用してGo2に直接接続するクライアント
 主な機能:
 - WebRTC経由でGo2に直接接続（Jetson不要！）
 - 高レベル移動制御
+- 障害物回避付き移動
+- 特殊動作（バックフリップ等）
 - カメラ映像取得
 - 状態のリアルタイム取得
 
 対応ファームウェア:
 - Go2: 1.1.1 - 1.1.11（最新）
 - G1: 1.4.0
+
+MCFモード (v1.1.7+):
+- AIモードとノーマルモードが統合
+- SPORT_MOD トピックで制御
 
 制限事項:
 - unitree_webrtc_connectパッケージが必要
@@ -24,10 +30,14 @@ from typing import Optional, Callable, Any
 from enum import Enum
 
 from .state import RobotState, IMUState, FootState, RobotMode
+from .go2_commands import (
+    RtcTopic, SportCmd, ObstacleAvoidCmd, GaitType, SpeedLevel,
+    move_params, euler_params, special_action_params, obstacle_avoid_params
+)
 
 # WebRTC接続ライブラリ
 try:
-    from unitree_webrtc_connect import UnitreeWebRTCConnection, WebRTCConnectionMethod
+    from unitree_webrtc_connect import Go2WebRTCConnection, WebRTCConnectionMethod
     WEBRTC_AVAILABLE = True
 except ImportError:
     WEBRTC_AVAILABLE = False
@@ -52,6 +62,7 @@ class WebRTCClient:
         robotIp: ロボットのIPアドレス（STA-Lモード用）
         serialNumber: シリアル番号（STA-L/Remoteモード用）
         connected: 接続状態
+        obstacleAvoidEnabled: 障害物回避の状態
     """
 
     def __init__(
@@ -87,6 +98,9 @@ class WebRTCClient:
         # 状態
         self.state = RobotState()
         self._lastStateTime = 0
+        
+        # 障害物回避
+        self.obstacleAvoidEnabled = False
 
     def connect(self) -> bool:
         """
@@ -137,15 +151,15 @@ class WebRTCClient:
         try:
             # 接続モードに応じてWebRTC接続を作成
             if self.connectionMode == ConnectionMode.LOCAL_AP:
-                self._conn = UnitreeWebRTCConnection(WebRTCConnectionMethod.LocalAP)
+                self._conn = Go2WebRTCConnection(WebRTCConnectionMethod.LocalAP)
             elif self.connectionMode == ConnectionMode.LOCAL_STA:
                 if self.robotIp:
-                    self._conn = UnitreeWebRTCConnection(
+                    self._conn = Go2WebRTCConnection(
                         WebRTCConnectionMethod.LocalSTA,
                         ip=self.robotIp
                     )
                 elif self.serialNumber:
-                    self._conn = UnitreeWebRTCConnection(
+                    self._conn = Go2WebRTCConnection(
                         WebRTCConnectionMethod.LocalSTA,
                         serialNumber=self.serialNumber
                     )
@@ -156,25 +170,12 @@ class WebRTCClient:
                 print("[WebRTCClient] Remoteモードは未実装です")
                 return
             
-            # コールバック設定
-            self._conn.on("open", self._onOpen)
-            self._conn.on("close", self._onClose)
-            self._conn.on("error", self._onError)
-            
-            # ビデオトラックのコールバック
-            if hasattr(self._conn, 'on_video_frame'):
-                self._conn.on_video_frame = self._onVideoFrame
-            
-            # データチャンネルのコールバック
-            if hasattr(self._conn, 'on_data_channel_message'):
-                self._conn.on_data_channel_message = self._onDataMessage
-            
             # 接続開始
             await self._conn.connect()
             
             self.connected = True
             self.state.connected = True
-            print("[WebRTCClient] 接続成功！")
+            print("[WebRTCClient] 🚀 WebRTC接続成功！")
             
             # 状態更新ループ
             while self._running:
@@ -185,48 +186,12 @@ class WebRTCClient:
             print(f"[WebRTCClient] 接続エラー: {e}")
             self.connected = False
 
-    def _onOpen(self) -> None:
-        """接続完了コールバック"""
-        print("[WebRTCClient] WebRTC接続確立")
-        self.connected = True
-        self.state.connected = True
-
-    def _onClose(self) -> None:
-        """切断コールバック"""
-        print("[WebRTCClient] WebRTC接続終了")
-        self.connected = False
-        self.state.connected = False
-
-    def _onError(self, error) -> None:
-        """エラーコールバック"""
-        print(f"[WebRTCClient] エラー: {error}")
-
-    def _onVideoFrame(self, frame) -> None:
-        """ビデオフレーム受信コールバック"""
-        if self._videoCallback:
-            self._videoCallback(frame)
-
-    def _onDataMessage(self, message) -> None:
-        """データチャンネルメッセージ受信"""
-        # ロボット状態の解析
-        try:
-            self._parseStateMessage(message)
-        except Exception as e:
-            print(f"[WebRTCClient] メッセージ解析エラー: {e}")
-
-    def _parseStateMessage(self, message) -> None:
-        """状態メッセージを解析"""
-        # TODO: メッセージフォーマットに応じた解析
-        pass
-
     async def _updateState(self) -> None:
         """状態を更新"""
         if not self.connected or not self._conn:
             return
         
         try:
-            # 状態取得（unitree_webrtc_connectのAPIに依存）
-            # 実際のAPIに合わせて実装
             self.state.timestamp = time.time()
             
             # コールバック呼び出し
@@ -243,7 +208,6 @@ class WebRTCClient:
         self._running = False
         
         if self._conn:
-            # 非同期で切断
             if self._eventLoop and self._eventLoop.is_running():
                 asyncio.run_coroutine_threadsafe(
                     self._asyncDisconnect(),
@@ -274,24 +238,66 @@ class WebRTCClient:
         self._videoCallback = callback
 
     # ============================================================
-    # 制御コマンド
+    # 内部コマンド送信
     # ============================================================
 
-    def _sendCommand(self, cmd: dict) -> None:
-        """コマンドを送信"""
+    def _sendSportCommand(self, apiId: int, parameter: Optional[dict] = None) -> None:
+        """
+        SPORT_MODトピックにコマンドを送信
+
+        Args:
+            apiId: API ID (SportCmd)
+            parameter: パラメータ辞書
+        """
         if not self.connected or not self._conn:
             return
         
         try:
-            # unitree_webrtc_connectのAPIに合わせて送信
-            if hasattr(self._conn, 'send_command'):
-                if self._eventLoop and self._eventLoop.is_running():
-                    asyncio.run_coroutine_threadsafe(
-                        self._conn.send_command(cmd),
-                        self._eventLoop
-                    )
+            if self._eventLoop and self._eventLoop.is_running():
+                request = {"api_id": apiId}
+                if parameter:
+                    request["parameter"] = parameter
+                    
+                asyncio.run_coroutine_threadsafe(
+                    self._conn.datachannel.pub_sub.publish_request_new(
+                        RtcTopic.SPORT_MOD,
+                        request
+                    ),
+                    self._eventLoop
+                )
         except Exception as e:
             print(f"[WebRTCClient] コマンド送信エラー: {e}")
+
+    def _sendObstacleAvoidCommand(self, apiId: int, parameter: Optional[dict] = None) -> None:
+        """
+        OBSTACLES_AVOIDトピックにコマンドを送信
+
+        Args:
+            apiId: API ID (ObstacleAvoidCmd)
+            parameter: パラメータ辞書
+        """
+        if not self.connected or not self._conn:
+            return
+        
+        try:
+            if self._eventLoop and self._eventLoop.is_running():
+                request = {"api_id": apiId}
+                if parameter:
+                    request["parameter"] = parameter
+                    
+                asyncio.run_coroutine_threadsafe(
+                    self._conn.datachannel.pub_sub.publish_request_new(
+                        RtcTopic.OBSTACLES_AVOID,
+                        request
+                    ),
+                    self._eventLoop
+                )
+        except Exception as e:
+            print(f"[WebRTCClient] 障害物回避コマンド送信エラー: {e}")
+
+    # ============================================================
+    # 基本制御コマンド
+    # ============================================================
 
     def move(self, vx: float, vy: float, vyaw: float) -> None:
         """
@@ -302,48 +308,53 @@ class WebRTCClient:
             vy: 左右速度 (m/s)
             vyaw: 旋回速度 (rad/s)
         """
-        self._sendCommand({
-            "type": "move",
-            "vx": vx,
-            "vy": vy,
-            "vyaw": vyaw
-        })
+        if self.obstacleAvoidEnabled:
+            # 障害物回避付き移動
+            self._sendObstacleAvoidCommand(
+                ObstacleAvoidCmd.MOVE,
+                move_params(vx, vy, vyaw)
+            )
+        else:
+            # 通常移動
+            self._sendSportCommand(
+                SportCmd.MOVE,
+                move_params(vx, vy, vyaw)
+            )
         
-        # 状態更新
         self.state.velocity = [vx, vy, vyaw]
 
     def standUp(self) -> None:
         """立ち上がりコマンドを送信"""
         print("[WebRTCClient] コマンド: StandUp")
-        self._sendCommand({"type": "stand_up"})
+        self._sendSportCommand(SportCmd.STAND_UP)
         self.state.mode = RobotMode.STAND_UP
 
     def standDown(self) -> None:
         """伏せるコマンドを送信"""
         print("[WebRTCClient] コマンド: StandDown")
-        self._sendCommand({"type": "stand_down"})
+        self._sendSportCommand(SportCmd.STAND_DOWN)
         self.state.mode = RobotMode.STAND_DOWN
 
     def balanceStand(self) -> None:
         """バランススタンドモードに移行"""
         print("[WebRTCClient] コマンド: BalanceStand")
-        self._sendCommand({"type": "balance_stand"})
+        self._sendSportCommand(SportCmd.BALANCE_STAND)
 
     def recoveryStand(self) -> None:
         """リカバリースタンド（転倒復帰）"""
         print("[WebRTCClient] コマンド: RecoveryStand")
-        self._sendCommand({"type": "recovery_stand"})
+        self._sendSportCommand(SportCmd.RECOVERY_STAND)
 
     def stopMove(self) -> None:
         """移動を停止"""
         print("[WebRTCClient] コマンド: StopMove")
-        self._sendCommand({"type": "stop_move"})
+        self._sendSportCommand(SportCmd.STOP_MOVE)
         self.state.velocity = [0, 0, 0]
 
     def damp(self) -> None:
         """ダンプモード（脱力）"""
         print("[WebRTCClient] コマンド: Damp")
-        self._sendCommand({"type": "damp"})
+        self._sendSportCommand(SportCmd.DAMP)
         self.state.mode = RobotMode.IDLE
 
     def emergencyStop(self) -> None:
@@ -352,3 +363,170 @@ class WebRTCClient:
         self.stopMove()
         self.damp()
 
+    # ============================================================
+    # 障害物回避
+    # ============================================================
+
+    def setObstacleAvoid(self, enable: bool) -> None:
+        """
+        障害物回避のON/OFF
+
+        Args:
+            enable: True=ON, False=OFF
+        """
+        print(f"[WebRTCClient] 障害物回避: {'ON' if enable else 'OFF'}")
+        self._sendObstacleAvoidCommand(
+            ObstacleAvoidCmd.SWITCH,
+            obstacle_avoid_params(enable)
+        )
+        self.obstacleAvoidEnabled = enable
+
+    def enableObstacleAvoid(self) -> None:
+        """障害物回避をON"""
+        self.setObstacleAvoid(True)
+
+    def disableObstacleAvoid(self) -> None:
+        """障害物回避をOFF"""
+        self.setObstacleAvoid(False)
+
+    # ============================================================
+    # 姿勢制御
+    # ============================================================
+
+    def pose(self) -> None:
+        """ポーズモード開始（Euler前に必要）"""
+        print("[WebRTCClient] コマンド: Pose")
+        self._sendSportCommand(SportCmd.POSE)
+
+    def euler(self, roll: float, pitch: float, yaw: float) -> None:
+        """
+        姿勢角度を設定
+
+        注意: 先にpose()を呼び出す必要がある
+
+        Args:
+            roll: ロール角 (rad)
+            pitch: ピッチ角 (rad)
+            yaw: ヨー角 (rad)
+        """
+        print(f"[WebRTCClient] コマンド: Euler (r:{roll:.2f}, p:{pitch:.2f}, y:{yaw:.2f})")
+        self._sendSportCommand(
+            SportCmd.EULER,
+            euler_params(roll, pitch, yaw)
+        )
+
+    def setBodyHeight(self, height: float) -> None:
+        """
+        体高を設定
+
+        Args:
+            height: 体高 (m)
+        """
+        print(f"[WebRTCClient] コマンド: BodyHeight ({height:.2f}m)")
+        self._sendSportCommand(SportCmd.BODY_HEIGHT, {"height": height})
+
+    # ============================================================
+    # 歩行モード
+    # ============================================================
+
+    def switchGait(self, gaitType: int) -> None:
+        """
+        歩行タイプを切り替え
+
+        Args:
+            gaitType: 歩行タイプ (GaitType)
+        """
+        print(f"[WebRTCClient] コマンド: SwitchGait ({gaitType})")
+        self._sendSportCommand(SportCmd.SWITCH_GAIT, {"gait": gaitType})
+
+    def setSpeedLevel(self, level: int) -> None:
+        """
+        速度レベルを設定
+
+        Args:
+            level: 速度レベル (SpeedLevel)
+        """
+        print(f"[WebRTCClient] コマンド: SpeedLevel ({level})")
+        self._sendSportCommand(SportCmd.SPEED_LEVEL, {"level": level})
+
+    # ============================================================
+    # 特殊動作（バックフリップ等）
+    # parameter: {"data": True} が必要
+    # ============================================================
+
+    def _doSpecialAction(self, apiId: int, actionName: str) -> None:
+        """特殊動作を実行（内部用）"""
+        print(f"[WebRTCClient] 🎭 特殊動作: {actionName}")
+        self._sendSportCommand(apiId, special_action_params())
+
+    def backFlip(self) -> None:
+        """バック宙返り 🔥"""
+        self._doSpecialAction(SportCmd.BACK_FLIP, "BackFlip")
+
+    def frontFlip(self) -> None:
+        """前方宙返り"""
+        self._doSpecialAction(SportCmd.FRONT_FLIP, "FrontFlip")
+
+    def leftFlip(self) -> None:
+        """左宙返り"""
+        self._doSpecialAction(SportCmd.LEFT_FLIP, "LeftFlip")
+
+    def rightFlip(self) -> None:
+        """右宙返り"""
+        self._doSpecialAction(SportCmd.RIGHT_FLIP, "RightFlip")
+
+    def handStand(self) -> None:
+        """逆立ち"""
+        self._doSpecialAction(SportCmd.HAND_STAND, "HandStand")
+
+    def frontJump(self) -> None:
+        """前方ジャンプ"""
+        self._doSpecialAction(SportCmd.FRONT_JUMP, "FrontJump")
+
+    def sit(self) -> None:
+        """お座り"""
+        self._doSpecialAction(SportCmd.SIT, "Sit")
+
+    def stretch(self) -> None:
+        """ストレッチ"""
+        self._doSpecialAction(SportCmd.STRETCH, "Stretch")
+
+    def dance1(self) -> None:
+        """ダンス1"""
+        self._doSpecialAction(SportCmd.DANCE_1, "Dance1")
+
+    def dance2(self) -> None:
+        """ダンス2"""
+        self._doSpecialAction(SportCmd.DANCE_2, "Dance2")
+
+    def bark(self) -> None:
+        """吠える"""
+        self._doSpecialAction(SportCmd.BARK, "Bark")
+
+    def greeting(self) -> None:
+        """挨拶"""
+        self._doSpecialAction(SportCmd.GREETING, "Greeting")
+
+    def shakeHand(self) -> None:
+        """握手"""
+        self._doSpecialAction(SportCmd.SHAKE_HAND, "ShakeHand")
+
+    def highFive(self) -> None:
+        """ハイタッチ"""
+        self._doSpecialAction(SportCmd.HIGH_FIVE, "HighFive")
+
+    def waveHand(self) -> None:
+        """手を振る"""
+        self._doSpecialAction(SportCmd.WAVE_HAND, "WaveHand")
+
+    def fingerHeart(self) -> None:
+        """ハートマーク"""
+        self._doSpecialAction(SportCmd.FINGER_HEART, "FingerHeart")
+
+    def nap(self) -> None:
+        """昼寝"""
+        self._doSpecialAction(SportCmd.NAP, "Nap")
+
+    def wiggleHips(self) -> None:
+        """お尻フリフリ"""
+        self._doSpecialAction(SportCmd.WIGGLE_HIPS, "WiggleHips")

@@ -2,6 +2,7 @@
 ロボットビューウィジェット
 
 Go2の足接地状態と関節状態を視覚的に表示
+Mission Impossible風タクティカルデザイン
 
 主な機能:
 - 4足の接地状態表示
@@ -48,10 +49,10 @@ class RobotViewWidget(QWidget):
         layout.setSpacing(8)
 
         # タイトル
-        titleLabel = QLabel("🦿 FOOT STATUS")
+        titleLabel = QLabel("◆ FOOT STATUS")
         titleLabel.setStyleSheet("""
-            color: #00ffff;
-            font-size: 11px;
+            color: #DC143C;
+            font-size: 10px;
             font-weight: bold;
             letter-spacing: 3px;
         """)
@@ -73,9 +74,8 @@ class RobotViewWidget(QWidget):
         for name, row, col in legends:
             label = QLabel(f"● {name}: ---")
             label.setStyleSheet("""
-                color: #8080a0;
+                color: #404040;
                 font-size: 10px;
-                font-family: "SF Mono", monospace;
             """)
             self.legendLabels[name] = label
             legendLayout.addWidget(label, row, col)
@@ -96,18 +96,18 @@ class RobotViewWidget(QWidget):
         bodyHeight = 50
         legOffset = 50
 
-        # 本体
-        painter.setPen(QPen(QColor("#2a2a4a"), 2))
-        painter.setBrush(QBrush(QColor("#1a1a2e")))
+        # 本体 - タクティカル風
+        painter.setPen(QPen(QColor("#1A1A1A"), 2))
+        painter.setBrush(QBrush(QColor("#0C0C0C")))
         
         bodyRect = QRectF(
             centerX - bodyWidth/2, centerY - bodyHeight/2,
             bodyWidth, bodyHeight
         )
-        painter.drawRoundedRect(bodyRect, 8, 8)
+        painter.drawRect(bodyRect)
 
         # 進行方向マーカー
-        painter.setPen(QPen(QColor("#00ffff"), 2))
+        painter.setPen(QPen(QColor("#DC143C"), 2))
         painter.drawLine(
             int(centerX), int(centerY - bodyHeight/2),
             int(centerX), int(centerY - bodyHeight/2 - 15)
@@ -118,7 +118,7 @@ class RobotViewWidget(QWidget):
             QPointF(centerX - 6, centerY - bodyHeight/2 - 12),
             QPointF(centerX + 6, centerY - bodyHeight/2 - 12)
         ])
-        painter.setBrush(QBrush(QColor("#00ffff")))
+        painter.setBrush(QBrush(QColor("#DC143C")))
         painter.drawPolygon(arrowPoints)
 
         # 足の位置
@@ -134,7 +134,7 @@ class RobotViewWidget(QWidget):
             force = self._footForces[idx]
             
             # 足と本体を繋ぐ線
-            painter.setPen(QPen(QColor("#2a2a4a"), 2))
+            painter.setPen(QPen(QColor("#1A1A1A"), 2))
             if idx in [0, 2]:  # 右側
                 painter.drawLine(
                     int(centerX + bodyWidth/2), int(y),
@@ -151,9 +151,9 @@ class RobotViewWidget(QWidget):
             
             if contact:
                 # 接地中
-                color = QColor("#00ff88")
-                glowColor = QColor("#00ff88")
-                glowColor.setAlpha(100)
+                color = QColor("#00E676")
+                glowColor = QColor("#00E676")
+                glowColor.setAlpha(80)
                 
                 # グロー効果
                 painter.setPen(Qt.NoPen)
@@ -161,7 +161,7 @@ class RobotViewWidget(QWidget):
                 painter.drawEllipse(QPointF(x, y), footRadius + 5, footRadius + 5)
             else:
                 # 浮いている
-                color = QColor("#ff3366")
+                color = QColor("#DC143C")
             
             # 足本体
             painter.setPen(QPen(color, 2))
@@ -169,8 +169,8 @@ class RobotViewWidget(QWidget):
             painter.drawEllipse(QPointF(x, y), footRadius, footRadius)
             
             # 足ラベル
-            painter.setPen(QPen(QColor("#ffffff")))
-            font = QFont("SF Mono", 8)
+            painter.setPen(QPen(QColor("#FFFFFF")))
+            font = QFont("JetBrains Mono", 8)
             font.setBold(True)
             painter.setFont(font)
             painter.drawText(
@@ -179,8 +179,9 @@ class RobotViewWidget(QWidget):
             )
 
         # ロボットラベル
-        painter.setPen(QPen(QColor("#00ffff")))
-        font = QFont("SF Mono", 9)
+        painter.setPen(QPen(QColor("#DC143C")))
+        font = QFont("JetBrains Mono", 9)
+        font.setBold(True)
         painter.setFont(font)
         painter.drawText(
             int(centerX - 10), int(centerY + 5),
@@ -214,16 +215,15 @@ class RobotViewWidget(QWidget):
                 
                 if contact:
                     status = f"● {name}: {force:.0f}N"
-                    color = "#00ff88"
+                    color = "#00E676"
                 else:
                     status = f"○ {name}: AIR"
-                    color = "#ff3366"
+                    color = "#DC143C"
                 
                 self.legendLabels[name].setText(status)
                 self.legendLabels[name].setStyleSheet(f"""
                     color: {color};
                     font-size: 10px;
-                    font-family: "SF Mono", monospace;
                 """)
 
         self.update()

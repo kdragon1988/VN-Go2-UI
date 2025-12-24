@@ -132,6 +132,10 @@ class Go2ControllerApp(QObject):
         self.window.statusWidget.standDownClicked.connect(self._onStandDown)
         self.window.statusWidget.emergencyStopClicked.connect(self._onEmergencyStop)
         self.window.statusWidget.recoveryClicked.connect(self._onRecovery)
+        
+        # 特殊動作ウィジェットのシグナル
+        self.window.actionsWidget.actionTriggered.connect(self._onSpecialAction)
+        self.window.actionsWidget.obstacleAvoidChanged.connect(self._onObstacleAvoidChanged)
 
     def _pollGamepad(self) -> None:
         """
@@ -275,6 +279,45 @@ class Go2ControllerApp(QObject):
         if self._connected and self.robotClient:
             self.logger.info("コマンド: Recovery Stand")
             self.robotClient.recoveryStand()
+
+    @Slot(str)
+    def _onSpecialAction(self, actionName: str) -> None:
+        """
+        特殊動作実行
+
+        Args:
+            actionName: 動作名
+        """
+        if not self._connected or not self.robotClient:
+            return
+        
+        self.logger.info(f"🎭 特殊動作: {actionName}")
+        
+        # 動作名からメソッドを呼び出し
+        actionMethod = getattr(self.robotClient, actionName, None)
+        if actionMethod and callable(actionMethod):
+            try:
+                actionMethod()
+            except Exception as e:
+                self.logger.error(f"特殊動作エラー: {e}")
+        else:
+            self.logger.warning(f"未対応の動作: {actionName}")
+
+    @Slot(bool)
+    def _onObstacleAvoidChanged(self, enabled: bool) -> None:
+        """
+        障害物回避ON/OFF
+
+        Args:
+            enabled: 有効状態
+        """
+        if not self._connected or not self.robotClient:
+            return
+        
+        self.logger.info(f"🛡️ 障害物回避: {'ON' if enabled else 'OFF'}")
+        
+        if hasattr(self.robotClient, 'setObstacleAvoid'):
+            self.robotClient.setObstacleAvoid(enabled)
 
     def _onRobotState(self, state: RobotState) -> None:
         """
