@@ -108,8 +108,9 @@ class StatusWidget(QWidget):
         modeSelectLayout.addWidget(modeSelectLabel)
 
         self.modeCombo = QComboBox()
+        self.modeCombo.addItem("🚀 WebRTC (直接接続) ★推奨")
         self.modeCombo.addItem("🌐 WebSocket (Jetson経由)")
-        self.modeCombo.addItem("📡 Direct (SDK2シミュレーション)")
+        self.modeCombo.addItem("📡 Direct (SDK2)")
         self.modeCombo.setStyleSheet("""
             QComboBox {
                 background-color: #1a1a2e;
@@ -152,7 +153,8 @@ class StatusWidget(QWidget):
         ipLabel.setStyleSheet("color: #8080a0; font-size: 11px;")
         ipLayout.addWidget(ipLabel)
 
-        self.ipInput = QLineEdit("192.168.123.18")  # デフォルトはJetsonのIP
+        self.ipInput = QLineEdit("ap")  # デフォルトはAPモード（WebRTC直接接続）
+        self.ipInput.setPlaceholderText("ap または IPアドレス")
         self.ipInput.setStyleSheet("""
             QLineEdit {
                 background-color: #1a1a2e;
@@ -385,10 +387,15 @@ class StatusWidget(QWidget):
         Args:
             index: 選択されたモードのインデックス
         """
-        if index == 0:  # WebSocket
+        if index == 0:  # WebRTC
+            self.ipInput.setText("ap")  # APモード（Go2のWiFiに直接接続）
+            self.ipInput.setPlaceholderText("ap または IPアドレス")
+        elif index == 1:  # WebSocket
             self.ipInput.setText("192.168.123.18")  # Jetson IP
+            self.ipInput.setPlaceholderText("JetsonのIPアドレス")
         else:  # Direct
             self.ipInput.setText("192.168.123.161")  # Go2 MCU IP
+            self.ipInput.setPlaceholderText("Go2のIPアドレス")
 
     def _onConnectClicked(self) -> None:
         """接続ボタンクリック時の処理"""

@@ -19,7 +19,7 @@ from typing import Optional
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QObject, Signal, Slot, QTimer
 
-from .robot import Go2Client, WebSocketClient, RobotState
+from .robot import Go2Client, WebSocketClient, WebRTCClient, ConnectionMode, RobotState
 from .controller import GamepadController, GamepadState, XboxButton
 from .ui import MainWindow
 from .utils import setup_logger, get_logger
@@ -33,8 +33,13 @@ class Go2ControllerApp(QObject):
 
     Attributes:
         window: メインウィンドウ
-        robotClient: ロボット通信クライアント（Go2Client or WebSocketClient）
+        robotClient: ロボット通信クライアント
         gamepad: ゲームパッドコントローラー
+    
+    接続モード:
+        - webrtc: WebRTC直接接続（推奨、Jetson不要）
+        - websocket: Jetson経由のWebSocket接続
+        - direct: SDK2直接接続（cyclonedds必要）
     """
 
     # シグナル定義
@@ -64,8 +69,8 @@ class Go2ControllerApp(QObject):
         self.gamepad = GamepadController()
         self.window: Optional[MainWindow] = None
 
-        # 接続モード
-        self._connectionMode = "websocket"  # "websocket" or "direct"
+        # 接続モード: "webrtc" (推奨) / "websocket" / "direct"
+        self._connectionMode = "webrtc"
 
         # 状態
         self._connected = False
@@ -147,13 +152,39 @@ class Go2ControllerApp(QObject):
         # 接続モードを判定（ステータスウィジェットから取得）
         if hasattr(self.window.statusWidget, 'modeCombo'):
             modeIndex = self.window.statusWidget.modeCombo.currentIndex()
-            self._connectionMode = "websocket" if modeIndex == 0 else "direct"
+            modeMap = {0: "webrtc", 1: "websocket", 2: "direct"}
+            self._connectionMode = modeMap.get(modeIndex, "webrtc")
         
-        modeStr = "WebSocket (Jetson経由)" if self._connectionMode == "websocket" else "Direct (SDK2)"
+        modeLabels = {
+            "webrtc": "🚀 WebRTC (直接接続)",
+            "websocket": "🌐 WebSocket (Jetson経由)",
+            "direct": "📡 Direct (SDK2)"
+        }
+        modeStr = modeLabels.get(self._connectionMode, "Unknown")
         self.logger.info(f"Go2に接続中: {ip} ({modeStr})")
         
         try:
-            if self._connectionMode == "websocket":
+            if self._connectionMode == "webrtc":
+                # WebRTC直接接続（推奨！）
+                # IPが空または"ap"の場合はAPモード
+                if not ip or ip.lower() == "ap":
+                    self.robotClient = WebRTCClient(connectionMode=ConnectionMode.LOCAL_AP)
+                else:
+                    self.robotClient = WebRTCClient(
+                        robotIp=ip, 
+                        connectionMode=ConnectionMode.LOCAL_STA
+                    )
+                self.robotClient.setStateCallback(self._onRobotState)
+                self.robotClient.setVideoCallback(self._onVideoFrame)
+                
+                if self.robotClient.connect():
+                    self._connected = True
+                    self.window.updateConnectionState(True)
+                    self.logger.info("🚀 WebRTC接続成功！（Jetson不要）")
+                else:
+                    self._showConnectionError(ip, "WebRTC接続に失敗しました")
+                    
+            elif self._connectionMode == "websocket":
                 # WebSocket経由でJetsonに接続
                 self.robotClient = WebSocketClient(jetsonIp=ip, port=self.JETSON_WS_PORT)
                 self.robotClient.setStateCallback(self._onRobotState)
@@ -189,14 +220,18 @@ class Go2ControllerApp(QObject):
     def _showConnectionError(self, ip: str, message: str) -> None:
         """接続エラーダイアログを表示"""
         self.logger.error(message)
+        
+        hints = {
+            "webrtc": "• Go2のWiFi APに接続しているか確認\n• または同一LAN上にいるか確認",
+            "websocket": "• Jetson上で bridge_server.py を起動してください",
+            "direct": "• cyclonedds のインストールが必要です\n• Python 3.11が必要です"
+        }
+        
         QMessageBox.warning(
             self.window,
             "接続エラー",
             f"{message}\n\nIP: {ip}\n\n"
-            "WebSocketモードの場合:\n"
-            "  Jetson上で bridge_server.py を起動してください\n\n"
-            "Directモードの場合:\n"
-            "  cyclonedds のインストールが必要です"
+            f"ヒント:\n{hints.get(self._connectionMode, '')}"
         )
 
     @Slot()
